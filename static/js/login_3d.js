@@ -115,14 +115,8 @@ function initLoginScene(canvasId, accentColor, showPlanets = false) {
     const accentStars = new THREE.Points(accentGeo, accentMat);
     scene.add(accentStars);
 
-    // ----- Mouse Tracking -----
+    // Mouse Tracking Disabled
     let mouseX = 0, mouseY = 0;
-    const el = canvas.parentElement;
-    el.addEventListener('mousemove', e => {
-        const rect = el.getBoundingClientRect();
-        mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-        mouseY = -((e.clientY - rect.top) / rect.height - 0.5) * 2;
-    });
 
     // ----- Animate -----
     let t = 0;
@@ -139,16 +133,15 @@ function initLoginScene(canvasId, accentColor, showPlanets = false) {
             });
         }
 
-        // Slow gentle drift of starfield
-        stars.rotation.y += 0.0003;
-        stars.rotation.x += 0.0001;
+        // Animations Disabled
+        // stars.rotation.y += 0.0003;
+        // stars.rotation.x += 0.0001;
 
-        accentStars.rotation.y -= 0.0002;
-        accentStars.rotation.x += 0.00015;
+        // accentStars.rotation.y -= 0.0002;
+        // accentStars.rotation.x += 0.00015;
 
-        // Subtle twinkle via opacity pulsing
-        starMat.opacity = 0.55 + 0.15 * Math.sin(t * 1.2);
-        accentMat.opacity = 0.35 + 0.20 * Math.sin(t * 1.8 + 1.0);
+        // starMat.opacity = 0.7;
+        // accentMat.opacity = 0.55;
 
         // Camera mouse tracking
         camera.position.x += (mouseX * 2 - camera.position.x) * 0.04;

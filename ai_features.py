@@ -184,10 +184,9 @@ def generate_study_recommendations(attendance_pct, grade_score,
     """
     if api_key:
         try:
-            import google.generativeai as genai
+            from google import genai
             import json
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            client = genai.Client(api_key=api_key)
             
             prompt = f"""You are an expert academic counselor providing actionable study recommendations for a student taking '{course_name}'.
 The student's current performance metrics are:
@@ -210,7 +209,10 @@ Return ONLY valid JSON in the exact following structure:
 (Use #dc3545 for HIGH, #fd7e14 for MEDIUM, #0dcaf0 for LOW, #198754 for INFO priority colors).
 Do not wrap the response in markdown code blocks, just raw JSON."""
             
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
             text = response.text.strip()
             
             if text.startswith("```json"): text = text[7:]

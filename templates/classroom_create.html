@@ -31,7 +31,7 @@
     background-size: 200% 100%;
     animation: shimmer 2s linear infinite;
 }
-@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+/* shimmer disabled */
 
 .glassform-title {
     font-size: 1.5rem;
@@ -64,7 +64,7 @@
 .course-option-label input[type=radio] { display: none; }
 .course-radio-dot {
     width: 18px; height: 18px;
-    border-radius: 50%;
+    border-radius: 4px;
     border: 2px solid var(--border);
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
@@ -78,7 +78,7 @@
     content: '';
     width: 6px; height: 6px;
     background: white;
-    border-radius: 50%;
+    border-radius: 2px;
 }
 .course-code-chip {
     padding: 3px 9px;
@@ -125,33 +125,22 @@
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 20px rgba(220,38,38,0.35);
     position: relative;
     overflow: hidden;
     margin-top: 28px;
 }
-.golive-btn::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -60%;
-    width: 60%; height: 200%;
-    background: rgba(255,255,255,0.15);
-    transform: skewX(-20deg);
-    animation: btnShine 2.5s ease-in-out infinite;
-}
-@keyframes btnShine { 0%{left:-60%} 100%{left:160%} }
-.golive-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(220,38,38,0.45); filter: brightness(1.05); }
-.golive-btn:active { transform: translateY(0); }
+.golive-btn::before { display: none; }
+/* @keyframes btnShine disabled */
+.golive-btn:hover { }
+.golive-btn:active { transform: none; }
 
 /* Live pulse dot */
 .live-pulse {
     width: 10px; height: 10px;
     background: white;
-    border-radius: 50%;
-    animation: livePulse 1s ease-in-out infinite;
+    border-radius: 2px;
 }
-@keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+/* @keyframes livePulse disabled */
 
 /* Right — Info Panel */
 .info-panel {
@@ -164,9 +153,8 @@
     border: 1px solid var(--border);
     border-radius: 18px;
     padding: 22px 24px;
-    transition: transform 0.2s;
 }
-.feature-card:hover { transform: translateY(-2px); }
+.feature-card:hover { }
 .feature-card-header {
     display: flex;
     align-items: center;
@@ -193,7 +181,7 @@
 }
 .feature-check {
     width: 18px; height: 18px;
-    border-radius: 50%;
+    border-radius: 4px;
     background: rgba(34,197,94,0.12);
     color: #4ade80;
     display: flex; align-items: center; justify-content: center;
@@ -217,7 +205,7 @@
     font-weight: 600;
     transition: all 0.18s;
 }
-.sessions-link:hover { background: var(--surface-3); color: var(--text-primary); transform: translateX(4px); }
+.sessions-link:hover { background: var(--surface-3); color: var(--text-primary); }
 
 .form-label-custom {
     font-size: 0.78rem;

@@ -15,26 +15,26 @@
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(124,58,237,0.3);
 }
-.hero-banner::before { content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;background:rgba(255,255,255,0.06);border-radius:50%; }
-.hero-banner::after  { content:'';position:absolute;bottom:-80px;left:25%;width:260px;height:260px;background:rgba(255,255,255,0.04);border-radius:50%; }
+.hero-banner::before { display: none; }
+.hero-banner::after  { display: none; }
 .hero-inner          { position:relative;z-index:1; }
 .hero-name           { font-size:1.35rem;font-weight:700;margin:0;letter-spacing:-0.3px; }
 .hero-sub            { font-size:0.82rem;opacity:0.75;margin:2px 0 0; }
-.hero-action-btn { display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:12px;font-size:0.875rem;font-weight:600;text-decoration:none;transition:all 0.18s; }
+.hero-action-btn { display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:12px;font-size:0.875rem;font-weight:600;text-decoration:none; }
 .hero-action-primary { background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);backdrop-filter:blur(8px); }
-.hero-action-primary:hover { background:rgba(255,255,255,0.3);color:white; }
+/* Hover disabled */
 .hero-action-ghost   { background:transparent;color:white;border:1px solid rgba(255,255,255,0.25); }
-.hero-action-ghost:hover { background:rgba(255,255,255,0.1);color:white; }
+/* Hover disabled */
 
 /* Stat cards — clickable */
 .stat-card-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px; }
 @media(max-width:768px){ .stat-card-grid{ grid-template-columns:repeat(2,1fr); } }
 .stat-prem {
     background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;
-    position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;
+    position:relative;overflow:hidden;
     text-decoration:none;display:block;
 }
-.stat-prem:hover { transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,0.3); }
+.stat-prem:hover { box-shadow:none; }
 .stat-prem-icon { width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:14px; }
 .stat-prem.purple .stat-prem-icon { background:rgba(167,139,250,0.12); }
 .stat-prem.cyan   .stat-prem-icon { background:rgba(6,182,212,0.12); }
@@ -60,9 +60,8 @@
 .pending-review-btn {
     display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:10px;
     background:#f59e0b;color:white;font-size:0.82rem;font-weight:600;text-decoration:none;
-    transition:filter 0.15s;
 }
-.pending-review-btn:hover { filter:brightness(1.1);color:white; }
+.pending-review-btn:hover { color:white; }
 
 /* Dept table */
 .dept-bar { height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-top:4px; }
@@ -82,16 +81,16 @@
     gap:6px;padding:16px 12px;border-radius:14px;text-decoration:none;
     background:var(--surface-2);border:1px solid var(--border);
     font-size:0.78rem;font-weight:600;color:var(--text-secondary);
-    text-align:center;transition:all 0.18s;
+    text-align:center;
 }
-.admin-action-tile:hover { background:var(--surface-3);color:var(--text-primary);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.25); }
+.admin-action-tile:hover { color:var(--text-primary); }
 .admin-action-tile .tile-icon { font-size:1.5rem; }
 .admin-action-tile.highlight {
     background:linear-gradient(135deg, rgba(124,58,237,0.15), rgba(79,70,229,0.15));
     border-color:rgba(124,58,237,0.3);
     color:#c4b5fd;
 }
-.admin-action-tile.highlight:hover { background:linear-gradient(135deg, rgba(124,58,237,0.25), rgba(79,70,229,0.25)); color:#e9d5ff; }
+.admin-action-tile.highlight:hover { color:#e9d5ff; }
 </style>
 {% endblock %}
 
@@ -136,7 +135,7 @@
     <a href="{{ url_for('instructor_list') }}" class="stat-prem indigo">
         <div class="stat-prem-icon">👨‍🏫</div>
         <div class="stat-prem-val">{{ stats.total_teachers }}</div>
-        <div class="stat-prem-lbl">Instructors</div>
+        <div class="stat-prem-lbl">Faculty</div>
     </a>
     <a href="{{ url_for('department_list') }}" class="stat-prem amber">
         <div class="stat-prem-icon">🏢</div>
@@ -260,7 +259,7 @@
                         <div class="tile-icon">👤</div><span>Add Student</span>
                     </a>
                     <a href="{{ url_for('instructor_add') }}" class="admin-action-tile">
-                        <div class="tile-icon">👨‍🏫</div><span>Add Instructor</span>
+                        <div class="tile-icon">👨‍🏫</div><span>Add Faculty</span>
                     </a>
                     <a href="{{ url_for('course_add') }}" class="admin-action-tile">
                         <div class="tile-icon">📖</div><span>Add Course</span>

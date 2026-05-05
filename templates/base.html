@@ -34,33 +34,33 @@
         --danger:        #ef4444;
         --info:          #06b6d4;
 
-        --bg:            #0a0f1e;
-        --surface:       #111827;
-        --surface-2:     #1f2937;
-        --surface-3:     #374151;
-        --border:        #1f2937;
-        --border-light:  #1a2235;
+        --bg:            #f8fafc;
+        --surface:       #ffffff;
+        --surface-2:     #f1f5f9;
+        --surface-3:     #e2e8f0;
+        --border:        #e2e8f0;
+        --border-light:  #f1f5f9;
 
-        --text-1:        #f1f5f9;
-        --text-primary:  #f1f5f9;
-        --text-secondary:#94a3b8;
-        --text-muted:    #475569;
-        --text-3:        #475569;
+        --text-1:        #0f172a;
+        --text-primary:  #0f172a;
+        --text-secondary:#475569;
+        --text-muted:    #64748b;
+        --text-3:        #94a3b8;
 
         --sidebar-w:     240px;
         --topbar-h:      60px;
         --radius:        10px;
         --radius-lg:     14px;
-        --shadow-sm:     0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-        --shadow:        0 4px 16px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3);
-        --shadow-lg:     0 10px 40px rgba(0,0,0,0.6);
+        --shadow-sm:     0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+        --shadow:        0 4px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+        --shadow-lg:     0 10px 40px rgba(0,0,0,0.1);
         --font:          'DM Sans', sans-serif;
         --font-mono:     'DM Mono', monospace;
 
         /* Role colors */
-        --admin-color:   #a78bfa;
-        --teacher-color: #06b6d4;
-        --student-color: #3b82f6;
+        --admin-color:   #a855f7; /* Purple */
+        --teacher-color: #4ade80; /* Light Green */
+        --student-color: #60a5fa; /* Light Blue */
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -86,9 +86,9 @@
         display: flex;
         flex-direction: column;
         z-index: 1000;
-        transition: width 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.3s ease;
+        transition: width 0.3s ease, transform 0.3s ease;
         box-shadow: 4px 0 24px rgba(0,0,0,0.18);
-        overflow: hidden;
+        overflow: visible;
     }
     /* Role-colored left accent line */
     .sidebar::before {
@@ -102,6 +102,9 @@
     }
     /* Collapsed mode */
     .sidebar.collapsed { width: 64px; }
+    .sidebar.collapsed ~ .topbar { left: 64px; }
+    .sidebar.collapsed ~ .main-wrapper { margin-left: 64px; }
+
     .sidebar.collapsed .brand-text,
     .sidebar.collapsed .brand-sub,
     .sidebar.collapsed .sidebar-section-label,
@@ -173,7 +176,6 @@
         text-decoration: none;
         font-size: 13px;
         font-weight: 500;
-        transition: background 0.14s, color 0.14s;
         margin: 1px 6px;
         position: relative;
         white-space: nowrap;
@@ -184,13 +186,8 @@
         font-size: 12.5px;
         flex-shrink: 0;
         border-radius: 6px;
-        transition: background 0.14s;
     }
-    .nav-link-item:hover {
-        background: #f0f4ff;
-        color: #2563eb;
-    }
-    .nav-link-item:hover .nav-icon { background: #dbeafe; }
+    /* Hover effects disabled */
     .nav-link-item.active {
         background: #eff4ff;
         color: #1d4ed8;
@@ -219,7 +216,7 @@
 
     /* Sidebar dropdown */
     .nav-dropdown .nav-dropdown-toggle { cursor: pointer; }
-    .nav-dropdown .chevron { margin-left: auto; font-size: 10px; transition: transform 0.2s; color: #94a3b8; }
+    .nav-dropdown .chevron { margin-left: auto; font-size: 10px; color: #94a3b8; }
     .nav-dropdown.open .chevron { transform: rotate(90deg); }
     .nav-dropdown-menu { display: none; padding-left: 12px; margin-top: 2px; }
     .nav-dropdown.open .nav-dropdown-menu { display: block; }
@@ -233,17 +230,14 @@
         width: 24px; height: 24px;
         background: white;
         border: 1.5px solid #e2e8f0;
-        border-radius: 50%;
+        border-radius: 6px;
         display: flex; align-items: center; justify-content: center;
         cursor: pointer;
         font-size: 10px;
         color: #64748b;
-        transition: all 0.2s;
         z-index: 10;
         box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    .sidebar-toggle-btn:hover { background: #f1f5f9; color: #1d4ed8; border-color: #1d4ed8; }
-
     /* User footer */
     .sidebar-footer {
         padding: 10px 12px;
@@ -257,9 +251,8 @@
         padding: 9px 10px;
         border-radius: 10px;
         cursor: pointer;
-        transition: background 0.15s;
+        cursor: pointer;
     }
-    .user-card:hover { background: #f1f5f9; }
     .user-avatar {
         width: 32px; height: 32px;
         border-radius: 8px;
@@ -283,7 +276,7 @@
     }
     .user-role-dot {
         width: 6px; height: 6px;
-        border-radius: 50%;
+        border-radius: 2px;
         background: var(--role-accent, var(--primary));
         display: inline-block;
     }
@@ -304,6 +297,7 @@
         justify-content: space-between;
         padding: 0 24px;
         z-index: 999;
+        transition: left 0.3s ease;
     }
     .topbar::before {
         content: '';
@@ -334,13 +328,10 @@
         border-radius: 10px;
         padding: 6px 14px;
         width: 260px;
-        transition: all 0.2s;
     }
     .topbar-search:focus-within {
         background: rgba(255,255,255,0.1);
         border-color: rgba(59,130,246,0.4);
-        width: 320px;
-        box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
     }
     .topbar-search input {
         background: transparent;
@@ -378,13 +369,9 @@
         cursor: pointer;
         text-decoration: none;
         position: relative;
-        transition: all 0.15s;
         font-size: 14px;
     }
-    .topbar-btn:hover {
-        background: var(--surface-2);
-        color: var(--text-primary);
-    }
+    /* Hover disabled */
     .notif-badge {
         position: absolute;
         top: -4px; right: -4px;
@@ -407,6 +394,7 @@
         margin-left: var(--sidebar-w);
         padding-top: var(--topbar-h);
         min-height: 100vh;
+        transition: margin-left 0.3s ease;
     }
     .main-content {
         padding: 24px;
@@ -442,9 +430,7 @@
         align-items: flex-start;
         gap: 16px;
         box-shadow: var(--shadow-sm);
-        transition: box-shadow 0.2s;
     }
-    .stat-card:hover { box-shadow: var(--shadow); }
     .stat-icon {
         width: 44px; height: 44px;
         border-radius: 10px;
@@ -650,11 +636,11 @@
         color: var(--text-secondary);
     }
     @media (max-width: 768px) {
-        .sidebar { transform: translateX(-100%); }
+        .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
         .sidebar.open { transform: translateX(0); }
         .sidebar-overlay.open { display: block; }
-        .main-wrapper { margin-left: 0; }
-        .topbar { left: 0; }
+        .main-wrapper { margin-left: 0 !important; }
+        .topbar { left: 0 !important; }
         .menu-toggle { display: flex; }
         .main-content { padding: 16px; }
     }
@@ -844,15 +830,35 @@
         :root { --role-accent: #7c3aed; }
         {% elif session.role == 'teacher' %}
         :root { --role-accent: #0891b2; }
+        {% elif session.role == 'hod' %}
+        :root { --role-accent: #d97706; }
         {% else %}
         :root { --role-accent: #2563eb; }
         {% endif %}
     </style>
 
+
     <!-- Nav -->
     <div class="sidebar-nav">
 
-        {% if session.role == 'admin' %}
+        {% if session.role == 'hod' %}
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">HOD</div>
+            <a href="{{ url_for('hod_dashboard') }}" class="nav-link-item {% if request.endpoint == 'hod_dashboard' %}active{% endif %}">
+                <span class="nav-icon" style="color:#d97706;"><i class="fas fa-th-large"></i></span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="{{ url_for('notifications') }}" class="nav-link-item {% if request.endpoint == 'notifications' %}active{% endif %}">
+                <span class="nav-icon"><i class="fas fa-bell"></i></span>
+                <span class="nav-label">Notifications</span>
+                {% if unread_count and unread_count > 0 %}<span class="badge-count">{{ unread_count }}</span>{% endif %}
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-link-item {% if request.endpoint == 'profile' %}active{% endif %}">
+                <span class="nav-icon"><i class="fas fa-user"></i></span>
+                <span class="nav-label">My Profile</span>
+            </a>
+        </div>
+        {% elif session.role == 'admin' %}
         <div class="sidebar-section">
             <div class="sidebar-section-label">Main</div>
             <a href="{{ url_for('admin_dashboard') }}" class="nav-link-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
@@ -866,6 +872,13 @@
             <a href="{{ url_for('advanced_search') }}" class="nav-link-item {% if request.endpoint == 'advanced_search' %}active{% endif %}">
                 <span class="nav-icon"><i class="fas fa-search"></i></span>
                 <span class="nav-label">Search</span>
+            </a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Registrations</div>
+            <a href="{{ url_for('admin_registrations') }}" class="nav-link-item {% if request.endpoint == 'admin_registrations' %}active{% endif %}">
+                <span class="nav-icon" style="color:#f59e0b;"><i class="fas fa-user-check"></i></span>
+                <span class="nav-label">Reg. Requests</span>
             </a>
         </div>
         <div class="sidebar-section">
@@ -884,12 +897,12 @@
             <div class="nav-dropdown" id="dd_instructors">
                 <div class="nav-link-item nav-dropdown-toggle" onclick="toggleDD('dd_instructors')">
                     <span class="nav-icon"><i class="fas fa-chalkboard-teacher"></i></span>
-                    <span class="nav-label">Instructors</span>
+                    <span class="nav-label">Faculty</span>
                     <i class="fas fa-chevron-right chevron"></i>
                 </div>
                 <div class="nav-dropdown-menu">
-                    <a href="{{ url_for('instructor_list') }}" class="nav-link-item"><span class="nav-icon"><i class="fas fa-list"></i></span><span class="nav-label">All Instructors</span></a>
-                    <a href="{{ url_for('instructor_add') }}" class="nav-link-item"><span class="nav-icon"><i class="fas fa-plus"></i></span><span class="nav-label">Add Instructor</span></a>
+                    <a href="{{ url_for('instructor_list') }}" class="nav-link-item"><span class="nav-icon"><i class="fas fa-list"></i></span><span class="nav-label">All Faculty</span></a>
+                    <a href="{{ url_for('instructor_add') }}" class="nav-link-item"><span class="nav-icon"><i class="fas fa-plus"></i></span><span class="nav-label">Add Faculty</span></a>
                 </div>
             </div>
             <div class="nav-dropdown" id="dd_courses">
@@ -1124,10 +1137,13 @@
             {% endif %}
         {% endwith %}
 
+{% endif %}
+
         {% block content %}{% endblock %}
+
+{% if session.logged_in %}
     </div>
 </div>
-
 {% endif %}
 
 <!-- Scripts -->
@@ -1203,7 +1219,7 @@ document.querySelectorAll('.nav-dropdown-menu a').forEach(function(a) {
   cursor:pointer;z-index:9999;
   box-shadow:0 4px 24px rgba(99,102,241,0.55);transition:all 0.25s;
 }
-#chatbotBtn:hover { transform:scale(1.1) rotate(-5deg); box-shadow:0 8px 32px rgba(99,102,241,0.7); }
+#chatbotBtn:hover { box-shadow:0 8px 32px rgba(99,102,241,0.7); }
 #chatWindow {
   position:fixed;bottom:92px;right:24px;width:360px;height:520px;
   background:#0f1629;
@@ -1228,7 +1244,7 @@ document.querySelectorAll('.nav-dropdown-menu a').forEach(function(a) {
                 <div style="font-size:11px;color:#a5b4fc;">● Online — Powered by Gemini</div>
             </div>
         </div>
-        <button onclick="toggleChat()" style="background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;width:28px;height:28px;border-radius:8px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">✕</button>
+        <button onclick="toggleChat()" style="background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;width:28px;height:28px;border-radius:8px;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
 
     <!-- Messages area -->
@@ -1236,10 +1252,10 @@ document.querySelectorAll('.nav-dropdown-menu a').forEach(function(a) {
 
     <!-- Quick action chips -->
     <div style="padding:8px 12px;background:#0f1629;border-top:1px solid rgba(99,102,241,0.15);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;">
-        <button onclick="sendQuick('What is my attendance?')" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.3)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'">📊 Attendance</button>
-        <button onclick="sendQuick('What are my grades?')" style="background:rgba(34,197,94,0.12);color:#86efac;border:1px solid rgba(34,197,94,0.25);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.background='rgba(34,197,94,0.25)'" onmouseout="this.style.background='rgba(34,197,94,0.12)'">📝 Grades</button>
-        <button onclick="sendQuick('Am I at risk?')" style="background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.25);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">⚠️ Risk</button>
-        <button onclick="sendQuick('help')" style="background:rgba(251,191,36,0.12);color:#fde68a;border:1px solid rgba(251,191,36,0.25);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.background='rgba(251,191,36,0.25)'" onmouseout="this.style.background='rgba(251,191,36,0.12)'">❓ Help</button>
+        <button onclick="sendQuick('What is my attendance?')" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;">📊 Attendance</button>
+        <button onclick="sendQuick('What are my grades?')" style="background:rgba(34,197,94,0.12);color:#86efac;border:1px solid rgba(34,197,94,0.25);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;">📝 Grades</button>
+        <button onclick="sendQuick('Am I at risk?')" style="background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.25);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;">⚠️ Risk</button>
+        <button onclick="sendQuick('help')" style="background:rgba(251,191,36,0.12);color:#fde68a;border:1px solid rgba(251,191,36,0.25);border-radius:20px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;">❓ Help</button>
     </div>
 
     <!-- Input row -->
@@ -1250,8 +1266,7 @@ document.querySelectorAll('.nav-dropdown-menu a').forEach(function(a) {
                onblur="this.style.borderColor='rgba(99,102,241,0.3)';this.style.boxShadow='none'"
                onkeydown="if(event.key==='Enter')sendMessage()">
         <button onclick="sendMessage()"
-                style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(99,102,241,0.4);transition:all 0.2s;flex-shrink:0;"
-                onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+                style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(99,102,241,0.4);transition:all 0.2s;flex-shrink:0;">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
@@ -1354,32 +1369,7 @@ function sendQuick(msg) {
 
 {% block extra_js %}{% endblock %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
-<script>
-    // Initialize 3D Spatial UI on all dashboard cards globally
-    document.addEventListener("DOMContentLoaded", function() {
-        // Exclude specific cards if needed, but selecting all generic cards creates a beautiful cohesive Spatial UI
-        VanillaTilt.init(document.querySelectorAll(".card"), {
-            max: 4,               // Max tilt rotation (degrees)
-            speed: 500,           // Speed of the enter/exit transition
-            glare: true,          // Adds a gorgeous 3D light glare effect
-            "max-glare": 0.15,    // Subtle glare opacity
-            scale: 1.015,         // Elements physically pop out slightly
-            perspective: 1200     // 3D Depth
-        });
-        
-        // Add preserve-3d to inner content so children can float
-        document.querySelectorAll(".card").forEach(c => {
-            c.style.transformStyle = "preserve-3d";
-            // Make headers and specific elements pop out for true 3D
-            const innerElements = c.querySelectorAll(".card-header, .btn-primary, .avatar");
-            innerElements.forEach(el => {
-                el.style.transform = "translateZ(30px)";
-                el.style.transition = "transform 0.3s";
-            });
-        });
-    });
-</script>
+<!-- Animations Disabled -->
 
 </body>
 </html>

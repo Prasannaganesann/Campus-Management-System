@@ -116,13 +116,41 @@ def init_db():
             dept_name TEXT UNIQUE NOT NULL,
             description TEXT,
             head_of_department TEXT,
+            hod_user_id INTEGER,
             office_location TEXT,
             phone TEXT,
             email TEXT,
             established_date DATE,
             budget DECIMAL(10,2),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (hod_user_id) REFERENCES users(id)
+        )
+        ''',
+        '''
+        CREATE TABLE IF NOT EXISTS registration_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            department_id INTEGER,
+            phone TEXT,
+            status TEXT DEFAULT 'pending',
+            hod_action TEXT,
+            hod_user_id INTEGER,
+            hod_note TEXT,
+            hod_action_at DATETIME,
+            admin_action TEXT,
+            admin_user_id INTEGER,
+            admin_note TEXT,
+            admin_action_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (department_id) REFERENCES departments(id),
+            FOREIGN KEY (hod_user_id) REFERENCES users(id),
+            FOREIGN KEY (admin_user_id) REFERENCES users(id)
         )
         ''',
         '''
@@ -432,7 +460,7 @@ def init_db():
         )
         '''
     ]
-    
+
     for table_sql in tables:
         c.execute(table_sql)
     
@@ -479,22 +507,44 @@ def init_db():
         except Exception as e:
             print(f"[WARN] Default faculty setup skipped: {e}")
     
-    # Insert default departments
+    # Insert default departments and auto-create HOD accounts
     departments_data = [
-        ('CS', 'Computer Science', 'Department of Computer Science', 'Dr. Smith', 'Building A, Room 101', '+1-555-0101', 'cs@school.edu', '2000-01-15', 500000.00),
-        ('MATH', 'Mathematics', 'Department of Mathematics', 'Dr. Johnson', 'Building B, Room 201', '+1-555-0102', 'math@school.edu', '2000-01-15', 450000.00),
-        ('PHY', 'Physics', 'Department of Physics', 'Dr. Williams', 'Building C, Room 301', '+1-555-0103', 'physics@school.edu', '2001-01-15', 475000.00),
-        ('CHEM', 'Chemistry', 'Department of Chemistry', 'Dr. Brown', 'Building D, Room 401', '+1-555-0104', 'chem@school.edu', '2001-01-15', 460000.00),
-        ('ENG', 'Engineering', 'Department of Engineering', 'Dr. Jones', 'Building E, Room 501', '+1-555-0105', 'eng@school.edu', '2002-01-15', 600000.00)
+        ('CS',   'Computer Science', 'Department of Computer Science', 'Dr. Smith',    'hod.cs@school.edu',   'Building A, Room 101', '+1-555-0101', 'cs@school.edu',      '2000-01-15', 500000.00),
+        ('MATH', 'Mathematics',      'Department of Mathematics',      'Dr. Johnson',  'hod.math@school.edu', 'Building B, Room 201', '+1-555-0102', 'math@school.edu',    '2000-01-15', 450000.00),
+        ('PHY',  'Physics',          'Department of Physics',          'Dr. Williams', 'hod.phy@school.edu',  'Building C, Room 301', '+1-555-0103', 'physics@school.edu', '2001-01-15', 475000.00),
+        ('CHEM', 'Chemistry',        'Department of Chemistry',        'Dr. Brown',    'hod.chem@school.edu', 'Building D, Room 401', '+1-555-0104', 'chem@school.edu',    '2001-01-15', 460000.00),
+        ('ENG',  'Engineering',      'Department of Engineering',      'Dr. Jones',    'hod.eng@school.edu',  'Building E, Room 501', '+1-555-0105', 'eng@school.edu',     '2002-01-15', 600000.00)
     ]
-    
+
     for dept in departments_data:
+        code, name, desc, hod_name, hod_email, office, phone, email, est_date, budget = dept
         try:
             c.execute(
-                """INSERT OR IGNORE INTO departments (dept_code, dept_name, description, head_of_department, office_location, phone, email, established_date, budget) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                dept)
+                """INSERT OR IGNORE INTO departments (dept_code, dept_name, description, head_of_department, office_location, phone, email, established_date, budget)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (code, name, desc, hod_name, office, phone, email, est_date, budget))
         except Exception as e:
             print(f"[WARN] Department insert warning: {e}")
+
+        # Auto-create HOD user account if not exists
+        hod_username = f'hod.{code.lower()}'
+        c.execute("SELECT id FROM users WHERE username = ?", (hod_username,))
+        if not c.fetchone():
+            try:
+                hod_pw = generate_password_hash('hod123')
+                hod_parts = hod_name.split()
+                hod_first = hod_parts[-1] if hod_parts else 'HOD'
+                hod_last  = code
+                c.execute(
+                    """INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active)
+                       VALUES (?, ?, ?, ?, ?, 'hod', 1)""",
+                    (hod_username, hod_email, hod_pw, hod_first, hod_last))
+                hod_uid = c.lastrowid
+                # Link HOD to department
+                c.execute("UPDATE departments SET hod_user_id = ? WHERE dept_code = ?", (hod_uid, code))
+                print(f"[OK] HOD user created: {hod_username} / hod123 ({name})")
+            except Exception as e:
+                print(f"[WARN] HOD user for {code} skipped: {e}")
     
     # Insert default settings
     settings_data = [
@@ -529,6 +579,87 @@ def init_db():
 
 # Initialize database
 init_db()
+
+def migrate_db():
+    """Run safe ALTER TABLE migrations for existing databases."""
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    # --- departments: add hod_user_id if missing ---
+    c.execute("PRAGMA table_info(departments)")
+    dept_cols = {row['name'] for row in c.fetchall()}
+    if 'hod_user_id' not in dept_cols:
+        c.execute("ALTER TABLE departments ADD COLUMN hod_user_id INTEGER REFERENCES users(id)")
+        print("[MIGRATE] Added hod_user_id column to departments")
+
+    # --- registration_requests table ---
+    c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='registration_requests'")
+    if not c.fetchone():
+        c.execute("""
+            CREATE TABLE registration_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
+                role TEXT NOT NULL,
+                department_id INTEGER,
+                phone TEXT,
+                status TEXT DEFAULT 'pending',
+                hod_action TEXT,
+                hod_user_id INTEGER,
+                hod_note TEXT,
+                hod_action_at DATETIME,
+                admin_action TEXT,
+                admin_user_id INTEGER,
+                admin_note TEXT,
+                admin_action_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (department_id) REFERENCES departments(id),
+                FOREIGN KEY (hod_user_id) REFERENCES users(id),
+                FOREIGN KEY (admin_user_id) REFERENCES users(id)
+            )""")
+        print("[MIGRATE] Created registration_requests table")
+
+    # --- Auto-create HOD user accounts for each department if missing ---
+    departments_hod = [
+        ('CS',   'Computer Science', 'Dr. Smith',    'hod.cs@school.edu'),
+        ('MATH', 'Mathematics',      'Dr. Johnson',  'hod.math@school.edu'),
+        ('PHY',  'Physics',          'Dr. Williams', 'hod.phy@school.edu'),
+        ('CHEM', 'Chemistry',        'Dr. Brown',    'hod.chem@school.edu'),
+        ('ENG',  'Engineering',      'Dr. Jones',    'hod.eng@school.edu'),
+    ]
+    for code, name, hod_name, hod_email in departments_hod:
+        hod_username = f'hod.{code.lower()}'
+        c.execute("SELECT id FROM users WHERE username = ?", (hod_username,))
+        existing = c.fetchone()
+        if not existing:
+            hod_pw     = generate_password_hash('hod123')
+            hod_parts  = hod_name.split()
+            hod_first  = hod_parts[-1] if hod_parts else 'HOD'
+            hod_last   = code
+            c.execute(
+                """INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active)
+                   VALUES (?, ?, ?, ?, ?, 'hod', 1)""",
+                (hod_username, hod_email, hod_pw, hod_first, hod_last))
+            hod_uid = c.lastrowid
+            print(f"[MIGRATE] HOD user created: {hod_username} / hod123 ({name})")
+        else:
+            hod_uid = existing['id']
+
+        # Link HOD to their department if not already linked
+        c.execute("SELECT hod_user_id FROM departments WHERE dept_code = ?", (code,))
+        dept_row = c.fetchone()
+        if dept_row and not dept_row['hod_user_id']:
+            c.execute("UPDATE departments SET hod_user_id = ? WHERE dept_code = ?", (hod_uid, code))
+
+    conn.commit()
+    conn.close()
+    print("[MIGRATE] Migration complete.")
+
+migrate_db()
 
 # ============================================================================
 # DECORATORS
@@ -583,6 +714,19 @@ def faculty_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def hod_required(f):
+    """Decorator to require HOD role"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please login to access this page', 'warning')
+            return redirect(url_for('login'))
+        if session.get('role') not in ('hod', 'admin'):
+            flash('You do not have permission to access this page', 'error')
+            return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # ============================================================================
 # AUTHENTICATION ROUTES
 # ============================================================================
@@ -609,13 +753,16 @@ def login():
             session['last_name'] = user['last_name']
             session['role'] = user['role']
             session['logged_in'] = True
-            
+
             flash(f'Welcome back, {user["first_name"]}!', 'success')
-            
-            if user['role'] == 'admin':
+
+            role = user['role']
+            if role == 'admin':
                 return redirect(url_for('admin_dashboard'))
-            elif user['role'] == 'teacher':
+            elif role == 'teacher':
                 return redirect(url_for('teacher_dashboard'))
+            elif role == 'hod':
+                return redirect(url_for('hod_dashboard'))
             else:
                 return redirect(url_for('student_dashboard'))
         else:
@@ -725,55 +872,91 @@ def dashboard():
         return redirect(url_for('admin_dashboard'))
     elif session['role'] == 'teacher':
         return redirect(url_for('teacher_dashboard'))
+    elif session['role'] == 'hod':
+        return redirect(url_for('hod_dashboard'))
     else:
         return redirect(url_for('student_dashboard'))
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """Register page"""
+    """Register page — creates a pending approval request"""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id, dept_name FROM departments ORDER BY dept_name")
+    departments = c.fetchall()
+
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        
-        conn = get_db()
-        c = conn.cursor()
-        
-        # Check if user exists
+        username    = (request.form.get('username') or '').strip()
+        email       = (request.form.get('email') or '').strip()
+        password    = request.form.get('password') or ''
+        first_name  = (request.form.get('first_name') or '').strip()
+        last_name   = (request.form.get('last_name') or '').strip()
+        role        = request.form.get('role', 'student')
+        phone       = (request.form.get('phone') or '').strip()
+        dept_id_str = request.form.get('department_id', '')
+
+        # Only allow student / teacher roles from public form
+        if role not in ('student', 'teacher'):
+            role = 'student'
+
+        department_id = int(dept_id_str) if dept_id_str.isdigit() else None
+
+        if not department_id:
+            flash('Please select a department.', 'error')
+            conn.close()
+            return render_template('register.html', departments=departments)
+
+        # Check uniqueness in users AND active pending requests
         c.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email))
         if c.fetchone():
-            flash('Username or email already exists', 'error')
+            flash('Username or email already exists.', 'error')
             conn.close()
-            return render_template('register.html')
-        
-        # Create user
+            return render_template('register.html', departments=departments)
+
+        c.execute(
+            "SELECT id FROM registration_requests WHERE (username = ? OR email = ?) AND status NOT IN ('rejected','terminated')",
+            (username, email))
+        if c.fetchone():
+            flash('A pending registration with this username or email already exists.', 'error')
+            conn.close()
+            return render_template('register.html', departments=departments)
+
         password_hash = generate_password_hash(password)
         c.execute(
-            """INSERT INTO users (username, email, password_hash, first_name, last_name, role) VALUES (?, ?, ?, ?, ?, ?)""",
-            (username, email, password_hash, first_name, last_name, 'student'))
-        
-        # Get the user_id of the newly created user
-        user_id = c.lastrowid
-        
-        # Create student record
-        year = datetime.now().strftime('%Y')
-        c.execute("SELECT COUNT(*) as count FROM students")
-        count = c.fetchone()['count'] + 1
-        student_id = f'{year}{count:04d}'
-        
-        c.execute(
-            """INSERT INTO students (user_id, student_id, first_name, last_name, email, enrollment_date, status) VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (user_id, student_id, first_name, last_name, email, datetime.now().strftime('%Y-%m-%d'), 'active'))
-        
+            """INSERT INTO registration_requests
+               (username, email, password_hash, first_name, last_name, role, department_id, phone, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')""",
+            (username, email, password_hash, first_name, last_name, role, department_id, phone))
+        req_id = c.lastrowid
+
+        # Notify the HOD of this department
+        c.execute("SELECT hod_user_id, dept_name FROM departments WHERE id = ?", (department_id,))
+        dept = c.fetchone()
+        if dept and dept['hod_user_id']:
+            role_label = 'Student' if role == 'student' else 'Faculty'
+            notif_msg = (
+                f"New {role_label} Registration Request:\n"
+                f"Name: {first_name} {last_name} | Email: {email} | "
+                f"Dept: {dept['dept_name']} | Phone: {phone or 'N/A'}"
+            )
+            c.execute(
+                """INSERT INTO notifications (user_id, title, message, type, action_url)
+                   VALUES (?, ?, ?, 'warning', ?)""",
+                (dept['hod_user_id'],
+                 f"📋 New {role_label} Registration — {first_name} {last_name}",
+                 notif_msg,
+                 f"/hod/registrations/{req_id}"))
+
         conn.commit()
         conn.close()
-        
-        flash('Registration successful! Please login.', 'success')
-        return redirect(url_for('student_login'))
-    
-    return render_template('register.html')
+        flash('✅ Registration submitted! Your application is under review. You will be notified once approved.', 'success')
+        return redirect(url_for('student_login') if role == 'student' else url_for('faculty_login'))
+
+    conn.close()
+    return render_template('register.html', departments=departments)
+
+
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -784,8 +967,234 @@ def forgot_password():
     return render_template('forgot_password.html')
 
 # ============================================================================
+# HOD ROUTES — Registration approval workflow
+# ============================================================================
+
+@app.route('/hod/dashboard')
+@hod_required
+def hod_dashboard():
+    """HOD landing page showing pending registrations for their department."""
+    conn = get_db()
+    c = conn.cursor()
+    # Find the department managed by this HOD
+    c.execute("SELECT * FROM departments WHERE hod_user_id = ?", (session['user_id'],))
+    dept = c.fetchone()
+    pending = hod_approved = hod_rejected = []
+    if dept:
+        c.execute(
+            """SELECT rr.*, d.dept_name FROM registration_requests rr
+               LEFT JOIN departments d ON d.id = rr.department_id
+               WHERE rr.department_id = ? AND rr.status = 'pending'
+               ORDER BY rr.created_at DESC""", (dept['id'],))
+        pending = c.fetchall()
+        c.execute(
+            """SELECT rr.*, d.dept_name FROM registration_requests rr
+               LEFT JOIN departments d ON d.id = rr.department_id
+               WHERE rr.department_id = ? AND rr.status = 'hod_approved'
+               ORDER BY rr.created_at DESC""", (dept['id'],))
+        hod_approved = c.fetchall()
+        c.execute(
+            """SELECT rr.*, d.dept_name FROM registration_requests rr
+               LEFT JOIN departments d ON d.id = rr.department_id
+               WHERE rr.department_id = ? AND rr.status IN ('rejected','terminated')
+               ORDER BY rr.created_at DESC""", (dept['id'],))
+        hod_rejected = c.fetchall()
+    c.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0", (session['user_id'],))
+    unread_count = c.fetchone()['count']
+    conn.close()
+    return render_template('hod_dashboard.html', dept=dept, pending=pending,
+                           hod_approved=hod_approved, hod_rejected=hod_rejected,
+                           unread_count=unread_count)
+
+@app.route('/hod/registrations/<int:req_id>')
+@hod_required
+def hod_registration_detail(req_id):
+    """HOD: view a single registration request."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute(
+        """SELECT rr.*, d.dept_name FROM registration_requests rr
+           LEFT JOIN departments d ON d.id = rr.department_id
+           WHERE rr.id = ?""", (req_id,))
+    req = c.fetchone()
+    c.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0", (session['user_id'],))
+    unread_count = c.fetchone()['count']
+    conn.close()
+    if not req:
+        flash('Registration request not found.', 'error')
+        return redirect(url_for('hod_dashboard'))
+    return render_template('hod_registration_detail.html', req=req, unread_count=unread_count)
+
+@app.route('/hod/registrations/<int:req_id>/action', methods=['POST'])
+@hod_required
+def hod_registration_action(req_id):
+    """HOD approves or rejects a registration request."""
+    action = request.form.get('action')  # 'approve' or 'reject'
+    note   = (request.form.get('note') or '').strip()
+
+    if action not in ('approve', 'reject'):
+        flash('Invalid action.', 'error')
+        return redirect(url_for('hod_dashboard'))
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute(
+        """SELECT rr.*, d.dept_name, d.hod_user_id FROM registration_requests rr
+           LEFT JOIN departments d ON d.id = rr.department_id
+           WHERE rr.id = ?""", (req_id,))
+    req = c.fetchone()
+
+    if not req or req['status'] != 'pending':
+        flash('Request not found or already actioned.', 'error')
+        conn.close()
+        return redirect(url_for('hod_dashboard'))
+
+    year = datetime.now().strftime('%Y')
+
+    if action == 'approve':
+        if req['role'] == 'student':
+            # STUDENT: HOD approval → immediately activate account
+            new_status = 'hod_approved'
+            # Create user account
+            c.execute(
+                """INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active)
+                   VALUES (?, ?, ?, ?, ?, 'student', 1)""",
+                (req['username'], req['email'], req['password_hash'], req['first_name'], req['last_name']))
+            user_id = c.lastrowid
+            # Create student record
+            c.execute("SELECT COUNT(*) as cnt FROM students")
+            cnt = c.fetchone()['cnt'] + 1
+            student_id = f'{year}{cnt:04d}'
+            c.execute(
+                """INSERT INTO students (user_id, student_id, first_name, last_name, email,
+                   department_id, enrollment_date, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 'active')""",
+                (user_id, student_id, req['first_name'], req['last_name'],
+                 req['email'], req['department_id'], datetime.now().strftime('%Y-%m-%d')))
+            new_status = 'active'
+            # In-app notification: student account is live (no user account to notify yet — email only approach)
+            flash(f"✅ Student {req['first_name']} {req['last_name']} approved and account activated.", 'success')
+
+        else:
+            # FACULTY: HOD approval → notify Admin for final approval
+            new_status = 'hod_approved'
+            # Find all admin users
+            c.execute("SELECT id FROM users WHERE role = 'admin'")
+            admins = c.fetchall()
+            for admin in admins:
+                c.execute(
+                    """INSERT INTO notifications (user_id, title, message, type, action_url)
+                       VALUES (?, ?, ?, 'warning', ?)""",
+                    (admin['id'],
+                     f"📋 Faculty Registration Awaiting Admin Approval — {req['first_name']} {req['last_name']}",
+                     (f"HOD has approved a Faculty registration.\n"
+                      f"Name: {req['first_name']} {req['last_name']} | Email: {req['email']} | "
+                      f"Dept: {req['dept_name']}"),
+                     f"/admin/registrations/{req_id}"))
+            flash(f"✅ Faculty {req['first_name']} {req['last_name']} approved by HOD. Forwarded to Admin for final activation.", 'success')
+
+    else:  # reject
+        new_status = 'rejected'
+        flash(f"❌ Registration for {req['first_name']} {req['last_name']} has been rejected.", 'warning')
+
+    c.execute(
+        """UPDATE registration_requests
+           SET status = ?, hod_action = ?, hod_user_id = ?, hod_note = ?, hod_action_at = CURRENT_TIMESTAMP
+           WHERE id = ?""",
+        (new_status, action, session['user_id'], note, req_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('hod_dashboard'))
+
+# ============================================================================
+# ADMIN: Faculty registration final approval
+# ============================================================================
+
+@app.route('/admin/registrations')
+@admin_required
+def admin_registrations():
+    """Admin view of faculty registrations awaiting final approval."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute(
+        """SELECT rr.*, d.dept_name FROM registration_requests rr
+           LEFT JOIN departments d ON d.id = rr.department_id
+           WHERE rr.role = 'teacher' AND rr.status = 'hod_approved'
+           ORDER BY rr.hod_action_at DESC""")
+    pending_faculty = c.fetchall()
+    c.execute(
+        """SELECT rr.*, d.dept_name FROM registration_requests rr
+           LEFT JOIN departments d ON d.id = rr.department_id
+           WHERE rr.role IN ('student','teacher')
+           ORDER BY rr.created_at DESC LIMIT 100""")
+    all_requests = c.fetchall()
+    c.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0", (session['user_id'],))
+    unread_count = c.fetchone()['count']
+    conn.close()
+    return render_template('admin_registrations.html', pending_faculty=pending_faculty,
+                           all_requests=all_requests, unread_count=unread_count)
+
+@app.route('/admin/registrations/<int:req_id>/action', methods=['POST'])
+@admin_required
+def admin_registration_action(req_id):
+    """Admin approves or rejects a faculty registration (final step)."""
+    action = request.form.get('action')
+    note   = (request.form.get('note') or '').strip()
+
+    if action not in ('approve', 'reject'):
+        flash('Invalid action.', 'error')
+        return redirect(url_for('admin_registrations'))
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute(
+        """SELECT rr.*, d.dept_name FROM registration_requests rr
+           LEFT JOIN departments d ON d.id = rr.department_id
+           WHERE rr.id = ? AND rr.role = 'teacher' AND rr.status = 'hod_approved'""", (req_id,))
+    req = c.fetchone()
+
+    if not req:
+        flash('Request not found or not eligible for admin action.', 'error')
+        conn.close()
+        return redirect(url_for('admin_registrations'))
+
+    year = datetime.now().strftime('%Y')
+
+    if action == 'approve':
+        # Create user + instructor record
+        c.execute(
+            """INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active)
+               VALUES (?, ?, ?, ?, ?, 'teacher', 1)""",
+            (req['username'], req['email'], req['password_hash'], req['first_name'], req['last_name']))
+        user_id = c.lastrowid
+        c.execute("SELECT COUNT(*) as cnt FROM instructors")
+        cnt = c.fetchone()['cnt'] + 1
+        instructor_id = f'FAC{year}{cnt:03d}'
+        c.execute(
+            """INSERT INTO instructors (user_id, instructor_id, first_name, last_name, email,
+               department_id, joining_date, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'active')""",
+            (user_id, instructor_id, req['first_name'], req['last_name'],
+             req['email'], req['department_id'], datetime.now().strftime('%Y-%m-%d')))
+        new_status = 'active'
+        flash(f"✅ Faculty {req['first_name']} {req['last_name']} approved and account activated.", 'success')
+    else:
+        new_status = 'terminated'
+        flash(f"❌ Faculty registration for {req['first_name']} {req['last_name']} has been terminated.", 'warning')
+
+    c.execute(
+        """UPDATE registration_requests
+           SET status = ?, admin_action = ?, admin_user_id = ?, admin_note = ?, admin_action_at = CURRENT_TIMESTAMP
+           WHERE id = ?""",
+        (new_status, action, session['user_id'], note, req_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_registrations'))
+
+# ============================================================================
 # AI & GLOBAL ROUTES
 # ============================================================================
+
 
 @app.route('/api/teacher/generate_quiz/<int:course_id>', methods=['POST'])
 @faculty_required
@@ -803,11 +1212,13 @@ def generate_quiz(course_id):
         return jsonify({'error': 'Course not found.'})
         
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        prompt = f"Create a 3-question multiple-choice quiz covering: '{course['course_name']} - {course['description']}'. Output ONLY JSON: [{{'question': '...', 'options': ['A', 'B', 'C', 'D'], 'answer': 'A'}}, ...]"
-        response = model.generate_content(prompt)
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        prompt = f"Create a 3-question multiple-choice quiz covering: '{course['course_name']} - {course['description']}'. Output ONLY JSON: [{'question': '...', 'options': ['A', 'B', 'C', 'D'], 'answer': 'A'}, ...]"
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
         text = response.text.replace('```json', '').replace('```', '').strip()
         quiz_data = json.loads(text)
         
@@ -2266,7 +2677,7 @@ def instructor_add():
     return render_template('instructor_form.html', 
                          departments=departments, 
                          instructor=None,
-                         form_title='Add New Instructor',
+                         form_title='Add New Faculty',
                          unread_count=unread_count)
 
 @app.route('/admin/instructors/edit/<int:id>', methods=['GET', 'POST'])
@@ -2317,7 +2728,7 @@ def instructor_edit(id):
     return render_template('instructor_form.html',
                          instructor=instructor,
                          departments=departments,
-                         form_title='Edit Instructor',
+                         form_title='Edit Faculty',
                          unread_count=unread_count)
 
 @app.route('/admin/instructors/delete/<int:id>', methods=['POST'])
@@ -2340,7 +2751,7 @@ def instructor_delete(id):
                 ( session['user_id'], 'DELETE', 'instructors', id, request.remote_addr, request.user_agent.string ))
             
             conn.commit()
-            flash('Instructor deleted successfully', 'success')
+            flash('Faculty deleted successfully', 'success')
         
         conn.close()
         
@@ -2832,9 +3243,34 @@ def update_profile():
         conn = get_db()
         c = conn.cursor()
         
+        email = request.form.get('email')
+        username = request.form.get('username')
+        
+        # Check if email is already in use by another user
+        c.execute("SELECT id FROM users WHERE email = ? AND id != ?", (email, session['user_id']))
+        if c.fetchone():
+            flash('Error: That email address is already in use by another account.', 'error')
+            conn.close()
+            return redirect(url_for('profile'))
+
+        # Check if username is already in use by another user
+        c.execute("SELECT id FROM users WHERE username = ? AND id != ?", (username, session['user_id']))
+        if c.fetchone():
+            flash('Error: That username is already in use by another account.', 'error')
+            conn.close()
+            return redirect(url_for('profile'))
+
         c.execute(
-            """UPDATE users SET first_name = ?, last_name = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
-            ( request.form.get('first_name'), request.form.get('last_name'), request.form.get('email'), session['user_id'] ))
+            """UPDATE users SET first_name = ?, last_name = ?, email = ?, username = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+            ( request.form.get('first_name'), request.form.get('last_name'), email, username, session['user_id'] ))
+        
+        # Update session so the sidebar UI updates immediately
+        if request.form.get('first_name'):
+            session['first_name'] = request.form.get('first_name')
+        if request.form.get('last_name'):
+            session['last_name'] = request.form.get('last_name')
+        if username:
+            session['username'] = username
         
         if session['role'] == 'student':
             c.execute(
@@ -4259,11 +4695,39 @@ Instructions:
     
     # Fallback to offline warning
     if not api_key:
-        fallback_msg = f"Hello {first_name}! I am currently running in offline-fallback mode. "
-        if role == 'admin':
-            fallback_msg += "\n\n⚠️ **Action Required**: Please configure the `Google Gemini API Key` in the System Settings to unlock my true conversational AI capabilities!"
+        msg_lower = user_message.lower()
+        if 'attendance' in msg_lower or 'present' in msg_lower:
+            if role == 'student':
+                fallback_msg = f"Hello {first_name}! I am in offline mode. You can view your detailed attendance by navigating to the **Attendance** section on your dashboard."
+                if 'attendance' in context_data and context_data['attendance']:
+                    total_p = sum(c.get('attended', 0) for c in context_data['attendance'])
+                    total_t = sum(c.get('total', 0) for c in context_data['attendance'])
+                    if total_t > 0:
+                        pct = round((total_p / total_t) * 100, 1)
+                        fallback_msg = f"Your overall attendance is **{pct}%** ({total_p}/{total_t} classes). "
+                        if pct < 80:
+                            fallback_msg += "<br>⚠️ You are currently **at risk** (below 80%). Please attend upcoming classes!"
+                        else:
+                            fallback_msg += "Great job keeping it above the required threshold!"
+            else:
+                fallback_msg = "As a teacher/admin, you can track course attendance from the **Daily Attendance** menu."
+        elif 'grade' in msg_lower or 'score' in msg_lower:
+            if role == 'student':
+                gpa = context_data.get('gpa', 0)
+                fallback_msg = f"In offline mode: Your current GPA is **{gpa}**. Check the **My Grades** section for details."
+            else:
+                fallback_msg = "Grades can be managed via the **Gradebook** module."
+        elif 'risk' in msg_lower or 'fail' in msg_lower:
+            if role == 'student':
+                fallback_msg = "Please check the AI predictor on your dashboard to see your actual risk profile."
+            else:
+                fallback_msg = "Risk analytics are available in the dashboard."
         else:
-            fallback_msg += "\n\nI cannot answer complex queries right now. Please ask your administrator to configure the AI system."
+            fallback_msg = f"Hello {first_name}! I am currently running in offline-fallback mode. "
+            if role == 'admin':
+                fallback_msg += "\n\n⚠️ **Action Required**: Please configure the `Google Gemini API Key` in the System Settings to unlock my true conversational AI capabilities!"
+            else:
+                fallback_msg += "\n\nI cannot answer complex queries right now. Please ask your administrator to configure the AI system."
             
         response_text = fallback_msg
 
@@ -4820,7 +5284,10 @@ def email_settings_page():
             if success:
                 flash('Email settings saved and test email sent successfully!', 'success')
             else:
-                flash(f'Settings saved but test email failed: {msg}', 'warning')
+                if 'Application-specific password required' in msg:
+                    flash('Settings saved but test email failed. Google requires an "App Password" instead of your normal password. Go to Google Account > Security > 2-Step Verification > App Passwords to generate one.', 'warning')
+                else:
+                    flash(f'Settings saved but test email failed: {msg}', 'warning')
         else:
             flash('Email settings saved!', 'success')
 
@@ -5242,6 +5709,7 @@ def send_attendance_alerts():
     conn.close()
     flash(f'Attendance alerts sent to {alert_count} students!', 'success')
     return redirect(url_for('email_settings_page'))
+
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ import json
 from functools import lru_cache
 
 try:
-    import google.generativeai as genai
+    from google import genai
 except ImportError:
     pass
 
@@ -59,8 +59,7 @@ def get_questions_for_course(course_name, course_code, count=5, api_key=None):
     # 1. Try Gemini API
     if api_key:
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            client = genai.Client(api_key=api_key)
             prompt = f"""You are an academic AI generating proctoring questions for an active online class.
 Course: '{course_name}' (Code: {course_code})
 Generate EXACTLY {count} multiple-choice questions covering fundamental concepts of this specific course. Keep questions concise.
@@ -71,7 +70,10 @@ Return ONLY valid JSON in this exact structure:
 ]
 The 'answer' should be the integer index (0-3) of the correct option. Do not include markdown codeblocks or any standard conversational text."""
 
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
             text = response.text.strip()
             
             # Clean up markdown if the LLM adds it anyway

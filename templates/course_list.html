@@ -166,7 +166,7 @@ function deleteCourse(id) {
 
 document.addEventListener('DOMContentLoaded', function() {
     $('#coursesTable').DataTable({
-        pageLength: {{ per_page }},
+        pageLength: {{ per_page|default(10) }},
         paging: false,
         searching: false,
         info: false,

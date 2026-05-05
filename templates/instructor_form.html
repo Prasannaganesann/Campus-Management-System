@@ -15,7 +15,7 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Instructor Information</h5>
+                    <h5 class="mb-0">Faculty Information</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('instructor_add' if not instructor else 'instructor_edit', id=instructor.id if instructor else 0) }}">
@@ -103,7 +103,7 @@
 
                         <div class="d-flex gap-2 mt-3">
                             <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save"></i> {{ 'Update Instructor' if instructor else 'Add Instructor' }}
+                                <i class="fas fa-save"></i> {{ 'Update Faculty' if instructor else 'Add Faculty' }}
                             </button>
                             <a href="{{ url_for('instructor_list') }}" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancel

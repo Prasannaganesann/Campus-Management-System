@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Instructors List{% endblock %}
+{% block title %}Faculty List{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-chalkboard-teacher"></i> Instructors Management</h2>
+                <h2><i class="fas fa-chalkboard-teacher"></i> Faculty Management</h2>
                 <a href="{{ url_for('instructor_add') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add New Instructor
+                    <i class="fas fa-plus"></i> Add New Faculty
                 </a>
             </div>
             <hr>
@@ -20,7 +20,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-search"></i> Search Instructors</h5>
+                    <h5 class="mb-0"><i class="fas fa-search"></i> Search Faculty</h5>
                 </div>
                 <div class="card-body">
                     <form method="GET" action="{{ url_for('instructor_list') }}" class="row">
@@ -48,14 +48,14 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-list"></i> Instructors List</h5>
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Faculty List</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover" id="instructorsTable">
                             <thead>
                                 <tr>
-                                    <th>Instructor ID</th>
+                                    <th>Faculty ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Department</th>
@@ -94,7 +94,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="8" class="text-center">No instructors found</td>
+                                    <td colspan="8" class="text-center">No faculty found</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -144,7 +144,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this instructor? This action cannot be undone.</p>
+                <p>Are you sure you want to delete this faculty member? This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <form method="POST" action="" id="deleteForm">
@@ -166,7 +166,7 @@ function deleteInstructor(id) {
 
 document.addEventListener('DOMContentLoaded', function() {
     $('#instructorsTable').DataTable({
-        pageLength: {{ per_page }},
+        pageLength: {{ per_page|default(10) }},
         paging: false,
         searching: false,
         info: false,
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
         language: {
             search: "Search:",
             lengthMenu: "Show _MENU_ entries per page",
-            info: "Showing _START_ to _END_ of _TOTAL_ instructors",
+            info: "Showing _START_ to _END_ of _TOTAL_ faculty members",
             paginate: {
                 first: "First",
                 last: "Last",

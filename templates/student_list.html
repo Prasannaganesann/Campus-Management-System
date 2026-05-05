@@ -164,7 +164,7 @@ function deleteStudent(id) {
 
 document.addEventListener('DOMContentLoaded', function() {
     $('#studentsTable').DataTable({
-        pageLength: {{ per_page }},
+        pageLength: {{ per_page|default(10) }},
         paging: false,
         searching: false,
         info: false,
