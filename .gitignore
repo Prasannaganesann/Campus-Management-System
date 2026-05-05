@@ -12,12 +12,12 @@ venv/
 env/
 ENV/
 
-# Environment Variables
+# Environment Variables — NEVER COMMIT
 .env
 .env.local
 .env.*.local
 
-# Database (do not commit actual DB)
+# Database — each user creates their own on first run
 database.db
 *.db
 *.sqlite
@@ -27,7 +27,7 @@ database.db
 logs/
 *.log
 
-# Uploads (user content)
+# Uploads — user-generated content
 uploads/
 
 # Flask session files
@@ -42,7 +42,7 @@ flask_session/
 *.sln
 *.sw?
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 Desktop.ini
@@ -55,11 +55,25 @@ build/
 # Migration cache
 migrations/versions/
 
-# Temp
+# Stray root-level HTML files (all HTML belongs in /templates)
+admin_login.html
+attendance.html
+faculty_login.html
+forgot_password.html
+register.html
+report_results.html
+student_dashboard.html
+student_form.html
+student_login.html
+student_ai_insights.html
+teacher_dashboard.html
+
+# Dev/debug scripts
 temp_err.log
 text.py
 debug.py
 detect_unused.py
 fix_data.py
-add_sample_data.py
 add_sample_attendance.py
+add_sample_data.py
+push_to_github.sh
